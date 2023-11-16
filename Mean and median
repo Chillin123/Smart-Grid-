@@ -1,0 +1,85 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Generating synthetic time series data
+np.random.seed(42)
+time_index = pd.date_range(start='2023-01-01', periods=365, freq='D')
+data = np.sin(np.linspace(0, 2*np.pi, 365)) + np.random.normal(0, 0.2, 365)
+ts_data = pd.Series(data, index=time_index)
+
+# Initialize segmentation parameters
+segment_length = 30  # Initial segment length
+segments_variance = [ts_data.index[0]]  # Segments based on variance
+segments_mean = [ts_data.index[0]]  # Segments based on mean
+segments_median = [ts_data.index[0]]  # Segments based on median
+
+# Adaptive segmentation algorithm based on variance, mean, and median
+for i in range(segment_length, len(ts_data), segment_length):
+    current_segment = ts_data.iloc[i - segment_length:i]
+    
+    # Calculate parameters for the current segment
+    segment_variance = current_segment.var()
+    segment_mean = current_segment.mean()
+    segment_median = current_segment.median()
+    
+    # Check variance change from previous segment
+    if i > segment_length and segment_variance > 1.2 * segments_variance[-1].var():
+        segments_variance.append(current_segment.index[0])
+    
+    # Check mean change from previous segment
+    if i > segment_length and abs(segment_mean - segments_mean[-1].mean()) > 0.3:
+        segments_mean.append(current_segment.index[0])
+    
+    # Check median change from previous segment
+    if i > segment_length and abs(segment_median - segments_median[-1].median()) > 0.3:
+        segments_median.append(current_segment.index[0])
+
+# Plot segmented time series data based on variance
+plt.figure(figsize=(10, 6))
+for segment_start in segments_variance:
+    plt.plot(ts_data[segment_start:segment_start + segment_length].index,
+             ts_data[segment_start:segment_start + segment_length].values,
+             label='Segment (Variance)')
+plt.xlabel('Time')
+plt.ylabel('Value')
+plt.title('Adaptive Segmentation based on Variance')
+plt.legend()
+plt.show()
+
+# Plot segmented time series data based on mean
+plt.figure(figsize=(10, 6))
+for segment_start in segments_mean:
+    plt.plot(ts_data[segment_start:segment_start + segment_length].index,
+             ts_data[segment_start:segment_start + segment_length].values,
+             label='Segment (Mean)')
+plt.xlabel('Time')
+plt.ylabel('Value')
+plt.title('Adaptive Segmentation based on Mean')
+plt.legend()
+plt.show()
+
+# Plot segmented time series data based on median
+plt.figure(figsize=(10, 6))
+for segment_start in segments_median:
+    plt.plot(ts_data[segment_start:segment_start + segment_length].index,
+             ts_data[segment_start:segment_start + segment_length].values,
+             label='Segment (Median)')
+plt.xlabel('Time')
+plt.ylabel('Value')
+plt.title('Adaptive Segmentation based on Median')
+plt.legend()
+plt.show()
+
+# Display the identified segments for each parameter
+print("Identified Segments (Variance):")
+for i, segment_start in enumerate(segments_variance[:-1]):
+    print(f"Segment {i + 1}: {segment_start} to {segments_variance[i + 1]}")
+
+print("\nIdentified Segments (Mean):")
+for i, segment_start in enumerate(segments_mean[:-1]):
+    print(f"Segment {i + 1}: {segment_start} to {segments_mean[i + 1]}")
+
+print("\nIdentified Segments (Median):")
+for i, segment_start in enumerate(segments_median[:-1]):
+    print(f"Segment {i + 1}: {segment_start} to {segments_median[i + 1]}")
